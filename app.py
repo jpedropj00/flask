@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 
 
@@ -13,12 +13,9 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable = False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
-@app.route('/api/products/add', method=['POST'])
-
-# Definindo rota(página principal) a requisição
-@app.route('/teste')
-def hello_world():
-    return 'hello world';
-
+@app.route('/api/products/add', methods=['POST'])
+def add_product():
+    data = request.json
+    return data
 if __name__ == '__main__':
     app.run(debug=True)
