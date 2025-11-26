@@ -1,11 +1,21 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from flask_login import UserMixin
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flask.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+CORS(app)
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(80), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
 class Product(db.Model):
     id = db.Column(db.Integer,primary_key=True)
@@ -23,9 +33,9 @@ def add_product():
         return jsonify({"message" : "Dados do produto inválido"}), 400
 @app.route('/api/products/delete/<int:product_id>', methods=["DELETE"])
 def delete_product(product_id):
-    produt = Product.query.get(product_id)
-    if produt:
-        db.session.delete(produt)
+    product = Product.query.get(product_id)
+    if product:
+        db.session.delete(product)
         db.session.commit()
         return jsonify({'message': 'Produto deletado com sucesso!'}), 200
     return jsonify({'message': 'Produto não encontrado'}), 404
@@ -34,9 +44,9 @@ def get_product_details(product_id):
     product=Product.query.get(product_id)
     if product:
         return jsonify({
-            'id': product_id,
+            'id': product.id,
             'name': product.name,
-            'price': product.name,
+            'price': product.price,
             'description': product.description
         })
     return jsonify({"message": "Produto não encontrado"}), 404
@@ -52,7 +62,7 @@ def update_product(product_id):
         product.price = data['price']
     if 'description' in data:
         product.description = data['description']
-    db.session.comit()
+    db.session.commit()
     return jsonify({'message': 'Produto atualizado com sucesso'})
 @app.route('/api/products', methods=['GET'])
 def get_products():
