@@ -54,5 +54,21 @@ def update_product(product_id):
         product.description = data['description']
     db.session.comit()
     return jsonify({'message': 'Produto atualizado com sucesso'})
+@app.route('/api/products', methods=['GET'])
+def get_products():
+    products = Product.query.all()
+    products_list = []
+    for product in products:
+        product_data = {
+            'id': product.id,
+            'name': product.name,
+            'price': product.price,
+            'description': product.description
+        }
+        products_list.append(product_data)
+    if not products_list:
+        return jsonify({'message': 'Nenhum produto encontrado'}), 404 
+    return jsonify(products_list), 200
+    
 if __name__ == '__main__':
     app.run(debug=True)
