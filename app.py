@@ -5,6 +5,7 @@ from flask_login import UserMixin, login_user, LoginManager
 from datetime import datetime
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = '12345678'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///flask.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -26,6 +27,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=True)
 @app.route('/api/products/add', methods=['POST'])
+@login_required
 def add_product():
         data = request.json
         if 'name' in data and 'price' in data: 
@@ -35,6 +37,7 @@ def add_product():
             return jsonify({"message" : "Produto cadastrado com sucesso"}), 201
         return jsonify({"message" : "Dados do produto inválido"}), 400
 @app.route('/api/products/delete/<int:product_id>', methods=["DELETE"])
+@login_required
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if product:
@@ -43,6 +46,7 @@ def delete_product(product_id):
         return jsonify({'message': 'Produto deletado com sucesso!'}), 200
     return jsonify({'message': 'Produto não encontrado'}), 404
 @app.route('/api/products/<int:product_id>', methods=["GET"])
+@login_required
 def get_product_details(product_id):
     product=Product.query.get(product_id)
     if product:
@@ -54,6 +58,7 @@ def get_product_details(product_id):
         })
     return jsonify({"message": "Produto não encontrado"}), 404
 @app.route('/api/products/update/<int:product_id>', methods=['PUT'])
+@login_required
 def update_product(product_id):
     product=Product.query.get(product_id)
     if not product:
@@ -82,7 +87,14 @@ def get_products():
     if not products_list:
         return jsonify({'message': 'Nenhum produto encontrado'}), 404 
     return jsonify(products_list), 200
+@login_manager.user_loader
+
+#Autenticação de usúario
+def load_user(user_id):
+    return User.query.get(int(user_id))
 @app.route('/api/login', methods=["POST"])
+
+#CRIAÇÂO DE USER
 def login():
     data = request.json
     user = User.query.filter_by(username=data.get('username')).first()
