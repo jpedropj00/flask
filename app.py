@@ -79,6 +79,16 @@ def get_products():
     if not products_list:
         return jsonify({'message': 'Nenhum produto encontrado'}), 404 
     return jsonify(products_list), 200
-    
+@app.route('/api/login', methods=["POST"])
+def login():
+    data = request.json
+    user = User.query.filter_by(username=data.get('username')).first()
+    if not user:
+        return jsonify({'message' : 'Usuário não encontrado!'}), 404
+    else:
+        if data.get('password') == user.password:
+            return jsonify({'message': 'Login realizado com sucesso!'})
+        else:
+            return jsonify({'message': 'Senha inválida'}), 401
 if __name__ == '__main__':
     app.run(debug=True)
