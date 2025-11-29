@@ -37,6 +37,7 @@ class CartItem(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+
 # -------------------------
 # LOGIN MANAGER
 # -------------------------
@@ -144,8 +145,61 @@ def get_products():
         })
 
     return jsonify(products_list), 200
+@app.route('/api/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_Cart(product_id):
+    user = User.query.get(int(current_user.id))
+    product = Product.query.get(product_id)
+    if not user or not product:
+        return jsonify({'message': 'Usuario ou produto não encontrado'}), 400
+    cart_item = CartItem(user_id=user.id, product_id=product_id, quantity=product.quantity)
+    db.session.add(cart_item)
+    db.session.commit()
+    return jsonify({'message': 'Produto adicionado ao carrinho com sucesso'})
 
+@app.route('/api/cart/remove/<int:product_id>', methods=[DELETE])
+@login_required
+def remove_from_cart(product_id):
+    cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({'message': 'Produto removido do carrinho com sucesso!'})
+    return jsonify({'message': 'Produto não encontrado no carrinho'}), 404
 
+@app.route('/api/cart', methods=['GET'])
+@login_required
+def view_caet():
+    user = User.query.get(int(current_user.id))
+    cart_items = user.cart
+    cart_content = []
+    for cart_item in cart_items:
+        product = Product.query.get(cart_item.product_id)
+        cart_content.append({
+            'id':cart_item.id,
+            'user_id': cart_item.user.id,
+            'product_id': cart_item.product_id,
+            'quantity': cart_item.quantity,
+            'product_name': product.name,
+            'product_price': product.price,
+        })
+    if cart_content:
+        return jsonify(cart_content), 200
+    return jsonify({'message': 'Carrinho vazio'}), 404
+
+@app.route('/api/cart/checkout', methods=['POST'])
+@login_required
+def checkout():
+    user = User.query.get(int(current_user.id))
+    if not user: 
+        return jsonify({'message': 'Usuário não encontrado'})
+    cart_items = user.cart
+    if not cart_items:
+        return jsonify({'message': 'Carrinho vazio'})
+    for cart_item in cart_items:
+        db.session.delete(cart_item)
+    db.session.commit()
+    return jsonify({'message': 'Checkout realizado com sucesso!'}), 200 
 # -------------------------
 # RUN
 # -------------------------
